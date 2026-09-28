@@ -1,14 +1,18 @@
 package com.ppt.papertrade.controller;
 
+import com.ppt.papertrade.dto.request.AdminUpdateUserRequest;
 import com.ppt.papertrade.dto.request.UpdateUserStatusRequest;
 import com.ppt.papertrade.dto.response.AdminStatsResponse;
 import com.ppt.papertrade.dto.response.AdminTradeResponse;
+import com.ppt.papertrade.dto.response.ApiResponse;
 import com.ppt.papertrade.dto.response.UserResponse;
+import com.ppt.papertrade.security.UserPrincipal;
 import com.ppt.papertrade.service.AdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,6 +41,12 @@ public class AdminController {
         return ResponseEntity.ok(users);
     }
 
+    @GetMapping("/users/{id}")
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+        UserResponse user = adminService.getUserById(id);
+        return ResponseEntity.ok(user);
+    }
+
     @PatchMapping("/users/{id}/status")
     public ResponseEntity<UserResponse> updateUserStatus(
             @PathVariable Long id,
@@ -44,6 +54,25 @@ public class AdminController {
     ) {
         UserResponse user = adminService.updateUserStatus(id, request);
         return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/users/{id}")
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody AdminUpdateUserRequest request
+    ) {
+        UserResponse user = adminService.updateUser(id, request);
+        return ResponseEntity.ok(user);
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<ApiResponse> deleteUser(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        Long currentAdminId = principal != null ? principal.getId() : null;
+        adminService.deleteUser(id, currentAdminId);
+        return ResponseEntity.ok(ApiResponse.ok("User account deleted successfully"));
     }
 
     @GetMapping("/trades")

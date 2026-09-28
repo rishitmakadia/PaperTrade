@@ -75,7 +75,7 @@ You can log in immediately or test with these accounts:
 | Role | Email | Password | Initial Balance |
 | :--- | :--- | :--- | :--- |
 | **Trader** | `krunal@example.com` | `password123` | ₹12,47,832.50 (with sample trades & portfolios) |
-| **Admin** | `admin@alphametrics.in` | `admin123` | Full access to Admin Console |
+| **Admin** | `admin@admin.com` | `12345678` | Full access to Admin Console |
 | **New User** | Any email | Any password | ₹10,00,000 fresh virtual capital |
 
 ---

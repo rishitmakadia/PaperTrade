@@ -150,8 +150,8 @@ public class DataInitializer implements CommandLineRunner {
         // 6. Admin Account
         createUserWithAccount(
                 "Admin",
-                "admin@alphametrics.in",
-                "admin123",
+                "admin@admin.com",
+                "12345678",
                 Role.ADMIN,
                 UserStatus.ACTIVE,
                 BigDecimal.ZERO,
@@ -163,7 +163,7 @@ public class DataInitializer implements CommandLineRunner {
 
         log.info("✓ Seed complete! Demo accounts ready:");
         log.info("  Trader: krunal@example.com / password123");
-        log.info("  Admin:  admin@alphametrics.in / admin123");
+        log.info("  Admin:  admin@admin.com / 12345678");
     }
 
     private void createUserWithAccount(

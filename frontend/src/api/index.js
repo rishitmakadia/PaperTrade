@@ -117,6 +117,9 @@ export const alertsAPI = {
 export const adminAPI = {
   stats:        ()           => api.get("/admin/stats"),
   users:        ()           => api.get("/admin/users"),
+  user:         (id)         => api.get(`/admin/users/${id}`),
   trades:       ()           => api.get("/admin/trades"),
   updateStatus: (id, status) => api.patch(`/admin/users/${id}/status`, { status }),
+  updateUser:   (id, data)   => api.put(`/admin/users/${id}`, data),
+  deleteUser:   (id)         => api.delete(`/admin/users/${id}`),
 };
