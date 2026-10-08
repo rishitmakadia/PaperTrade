@@ -10,11 +10,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Initializes default demo users, portfolios, and NSE stock symbols on initial application startup if empty.
+ * Initializes the database with default NSE stocks, demo users, realistic trade histories, and portfolios.
  */
 @Slf4j
 @Component
@@ -26,6 +28,8 @@ public class DataInitializer implements CommandLineRunner {
     private final AccountRepository accountRepository;
     private final StockRepository stockRepository;
     private final WatchlistRepository watchlistRepository;
+    private final TradeRepository tradeRepository;
+    private final HoldingRepository holdingRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -33,6 +37,7 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         seedStocks();
         seedUsers();
+        seedTradesIfEmpty();
     }
 
     private void seedStocks() {
@@ -164,6 +169,65 @@ public class DataInitializer implements CommandLineRunner {
         log.info("✓ Seed complete! Demo accounts ready:");
         log.info("  Trader: krunal@example.com / password123");
         log.info("  Admin:  admin@admin.com / 12345678");
+    }
+
+    private void seedTradesIfEmpty() {
+        if (tradeRepository.count() > 0) {
+            return;
+        }
+
+        log.info("🌱 Seeding realistic platform trade ledger...");
+
+        List<Portfolio> portfolios = portfolioRepository.findAllActiveWithUser();
+        Instant now = Instant.now();
+
+        for (Portfolio p : portfolios) {
+            if (p.getUser().getRole() == Role.ADMIN) continue;
+
+            String email = p.getUser().getEmail().toLowerCase();
+            if (email.contains("raj")) {
+                saveTrade(p, "MARUTI", "Maruti Suzuki India Ltd", TradeType.BUY, 15, new BigDecimal("12450.00"), now.minus(14, ChronoUnit.DAYS));
+                saveTrade(p, "MARUTI", "Maruti Suzuki India Ltd", TradeType.SELL, 5, new BigDecimal("12890.00"), now.minus(10, ChronoUnit.DAYS));
+                saveTrade(p, "BAJFINANCE", "Bajaj Finance Ltd", TradeType.BUY, 40, new BigDecimal("7120.00"), now.minus(8, ChronoUnit.DAYS));
+                saveTrade(p, "RELIANCE", "Reliance Industries Ltd", TradeType.BUY, 50, new BigDecimal("2980.00"), now.minus(4, ChronoUnit.DAYS));
+                saveTrade(p, "BAJFINANCE", "Bajaj Finance Ltd", TradeType.SELL, 15, new BigDecimal("7450.00"), now.minus(2, ChronoUnit.DAYS));
+            } else if (email.contains("vraj")) {
+                saveTrade(p, "SBIN", "State Bank of India", TradeType.BUY, 200, new BigDecimal("785.00"), now.minus(18, ChronoUnit.DAYS));
+                saveTrade(p, "TATAMOTORS", "Tata Motors Ltd", TradeType.BUY, 150, new BigDecimal("945.00"), now.minus(12, ChronoUnit.DAYS));
+                saveTrade(p, "SBIN", "State Bank of India", TradeType.SELL, 100, new BigDecimal("830.00"), now.minus(6, ChronoUnit.DAYS));
+                saveTrade(p, "INFY", "Infosys Ltd", TradeType.BUY, 80, new BigDecimal("1820.00"), now.minus(3, ChronoUnit.DAYS));
+            } else if (email.contains("shubham")) {
+                saveTrade(p, "ICICIBANK", "ICICI Bank Ltd", TradeType.BUY, 120, new BigDecimal("1180.00"), now.minus(20, ChronoUnit.DAYS));
+                saveTrade(p, "WIPRO", "Wipro Ltd", TradeType.BUY, 250, new BigDecimal("490.00"), now.minus(15, ChronoUnit.DAYS));
+                saveTrade(p, "ICICIBANK", "ICICI Bank Ltd", TradeType.SELL, 40, new BigDecimal("1225.00"), now.minus(7, ChronoUnit.DAYS));
+                saveTrade(p, "TCS", "Tata Consultancy Services Ltd", TradeType.BUY, 30, new BigDecimal("3950.00"), now.minus(1, ChronoUnit.DAYS));
+            } else if (email.contains("mayur")) {
+                saveTrade(p, "HDFCBANK", "HDFC Bank Ltd", TradeType.BUY, 60, new BigDecimal("1620.00"), now.minus(25, ChronoUnit.DAYS));
+                saveTrade(p, "HDFCBANK", "HDFC Bank Ltd", TradeType.SELL, 30, new BigDecimal("1590.00"), now.minus(16, ChronoUnit.DAYS));
+            }
+        }
+    }
+
+    private void saveTrade(Portfolio portfolio, String symbol, String companyName, TradeType type, int qty, BigDecimal price, Instant time) {
+        BigDecimal total = price.multiply(BigDecimal.valueOf(qty));
+        BigDecimal pnl = type == TradeType.SELL ? price.multiply(BigDecimal.valueOf(0.04)).multiply(BigDecimal.valueOf(qty)) : BigDecimal.ZERO;
+
+        Trade trade = Trade.builder()
+                .portfolio(portfolio)
+                .symbol(symbol)
+                .companyName(companyName)
+                .tradeType(type)
+                .quantity(qty)
+                .executionPrice(price)
+                .totalValue(total)
+                .realizedPnl(pnl)
+                .status(OrderStatus.EXECUTED)
+                .orderType(OrderType.MARKET)
+                .executedAt(time)
+                .createdAt(time)
+                .build();
+
+        tradeRepository.save(trade);
     }
 
     private void createUserWithAccount(
